@@ -8,6 +8,7 @@
 
 import UIKit
 import AFNetworking
+import MBProgressHUD
 
 class MoviesViewController: UIViewController , UITableViewDataSource, UITableViewDelegate {
 
@@ -16,8 +17,11 @@ class MoviesViewController: UIViewController , UITableViewDataSource, UITableVie
     var movies: [NSDictionary]?
     var endpoint: String = ""
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        
         
         tableView.dataSource = self
         tableView.delegate = self
@@ -26,15 +30,17 @@ class MoviesViewController: UIViewController , UITableViewDataSource, UITableVie
         
         
         let url = NSURL(string:"https://api.themoviedb.org/3/movie/\(endpoint)?api_key=076631a8284927c6cbd57535abdb4a0c")
+        
         let request = NSURLRequest(URL: url!)
         let session = NSURLSession(
             configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
             delegate:nil,
             delegateQueue:NSOperationQueue.mainQueue()
         )
-        
+        MBProgressHUD.showHUDAddedTo(self.view, animated: true)
         let task : NSURLSessionDataTask = session.dataTaskWithRequest(request,
              completionHandler: { (dataOrNil, response, error) in
+                MBProgressHUD.hideHUDForView(self.view, animated: true)
             if let data = dataOrNil {
             if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
             data, options:[]) as? NSDictionary {print("response: \(responseDictionary)")
@@ -105,6 +111,39 @@ class MoviesViewController: UIViewController , UITableViewDataSource, UITableVie
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
     }
- 
 
+    
+    
+    func refreshControlAction(refreshControl: UIRefreshControl) {
+        
+        // ... Create the NSURLRequest (myRequest) ...
+        
+        let clientId = "076631a8284927c6cbd57535abdb4a0c"
+        let url = NSURL(string:"https://api.themoviedb.org/3/movie/\(endpoint)?api_key=\(clientId)")
+        let request = NSURLRequest(URL: url!)
+        
+        // Configure session so that completion handler is executed on main UI thread
+        
+        let session = NSURLSession(
+            configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
+            delegate:nil,
+            delegateQueue:NSOperationQueue.mainQueue()
+        )
+        //  refreshControl.endRefreshing()
+        let task : NSURLSessionDataTask = session.dataTaskWithRequest(request,
+                 completionHandler: { (dataOrNil, response, error) in
+                  if let data = dataOrNil {
+                if let responseDictionary = try! NSJSONSerialization.JSONObjectWithData(
+                  data, options:[]) as? NSDictionary {
+                    //NSLog("response: \(responseDictionary)")
+                    self.movies = responseDictionary["results"]as?[NSDictionary]
+                    self.tableView.reloadData()
+                    refreshControl.endRefreshing()
+                         }
+            }
+        });
+        task.resume()
     }
+    
+    
+}

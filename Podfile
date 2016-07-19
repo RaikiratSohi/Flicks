@@ -6,4 +6,5 @@
 
 target 'Flicks' do
 	pod ‘AFNetworking’
+	pod ‘MBProgressHUD’
 end
